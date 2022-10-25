@@ -34,6 +34,7 @@ export async function getAllAssets(request){
     let limit = 0;
     let startIndex = 0;
     let endIndex = 0;
+    let page = 1;
 
     if(request.query.type){
         query.type = request.query.type;
@@ -43,25 +44,26 @@ export async function getAllAssets(request){
     }
     if(request.query.search){
         query.$or = [
-            { 'name': { $regex: request.query.search, $options: 'i' } },
-            { 'productID': parseInt(request.query.search) }
+            { 'productID': parseInt(request.query.search) },
+            { 'name': { $regex: request.query.search, $options: 'i' } }
         ]
+    }
+    if(request.query.page){
+      page = parseInt(request.query.page);
+      delete request.query.page;
     }
 
     results.productCount = await client.db("asset_management").collection("assets").aggregate([
-        {
-            '$match': query
-        },
-        {
-          '$count': 'count'
-        }
-      ]).toArray();
-    
-    if(request.query.page){
+      {
+          '$match': query
+      },
+      {
+        '$count': 'count'
+      }
+    ]).toArray();
+  
+    if(results.productCount.length){
         limit = 5;
-        const page = parseInt(request.query.page);
-        delete request.query.page;
-
         startIndex = (page - 1) * limit;
         endIndex = page * limit;
         results.pagesCount = Math.ceil(results.productCount[0].count / limit);
@@ -84,6 +86,8 @@ export async function getAllAssets(request){
         sort = request.query.sort;
         delete request.query.sort;
     }
+
+    results.filters = await client.db("asset_management").collection("assets").find(query).project({ _id:0, type:1, brand:1 }).toArray();
 
     if(sort === "price-asc"){
         results.list = await client.db("asset_management").collection("assets").find(query).sort({ price: 1 }).limit(limit).skip(startIndex).toArray();
@@ -210,12 +214,18 @@ export async function getAllSoldAssets(request){
     let limit = 0;
     let startIndex = 0;
     let endIndex = 0;
+    let page = 1;
 
     if(request.query.search){
         query.$or = [
-            { 'type': request.query.search },
-            { 'productID': parseInt(request.query.search) }
+            { 'productID': parseInt(request.query.search) },
+            { 'type': { $regex: request.query.search, $options: 'i' } }
         ]
+    }
+
+    if(request.query.page){
+      page = parseInt(request.query.page);
+      delete request.query.page;
     }
 
     results.productCount = await client.db("asset_management").collection("sold_assets").aggregate([
@@ -227,11 +237,8 @@ export async function getAllSoldAssets(request){
         }
       ]).toArray();
     
-    if(request.query.page){
+    if(results.productCount.length){
         limit = 5;
-        const page = parseInt(request.query.page);
-        delete request.query.page;
-
         startIndex = (page - 1) * limit;
         endIndex = page * limit;
         results.pagesCount = Math.ceil(results.productCount[0].count / limit);

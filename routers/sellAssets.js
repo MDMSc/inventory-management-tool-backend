@@ -85,8 +85,9 @@ router.delete("/:_id", async function (request, response) {
       const { productID, soldQty } = oidresult;
       const asset = await getOneAsset(parseInt(productID));
 
-      const { inStockQty } = asset;
-      let updatedQty = inStockQty + soldQty;
+      if(asset){
+        const { inStockQty } = asset;
+      const updatedQty = inStockQty + soldQty;
       const updateAsset = await putUpdateAsset(productID, {
         inStockQty: updatedQty,
       });
@@ -98,6 +99,12 @@ router.delete("/:_id", async function (request, response) {
         : response
             .status(400)
             .send({ message: "Failed to delete sell record" });
+      } else {
+        response
+            .status(200)
+            .send({ message: "Sell Record deleted successfully. Product not found in stock or removed from stock." })
+      }
+      
     } else {
       response.status(400).send({ message: "Failed to delete sell record" });
     }
