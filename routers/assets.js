@@ -1,5 +1,5 @@
 import express from 'express';
-import { deleteAsset, getAllAssets, getAssetsAggregation, getOneAsset, postAddAsset, putUpdateAsset } from '../helper/Helper.js';
+import { deleteAsset, getAllAssets, getAssetsAggregation, getOneAsset, getSearchAssets, postAddAsset, putUpdateAsset } from '../helper/Helper.js';
 
 const router = express.Router();
 
@@ -36,6 +36,23 @@ router.delete('/:productID', async function(request, response) {
 router.get('/assets-aggregation', async function(request, response) {
     const result = await getAssetsAggregation();
     result ? response.send(result) : response.status(404).send({ message: "Failed to fetch aggregation values" });
+});
+
+router.get("/search", async function(request, response) {
+    const keyword = request.query.search ? {
+        $or: [
+            { productID: parseInt(request.query.search)},
+            { name: { $regex: request.query.search, $options: "i"}}
+        ]
+    } : {};
+
+    const assetsResult = await getSearchAssets(keyword);
+
+    if(!assetsResult.length){
+        return response.status(404).send({ message: "No product found..." });
+    }
+
+    response.status(200).send(assetsResult);
 });
 
 

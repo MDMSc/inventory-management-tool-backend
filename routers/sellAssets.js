@@ -53,11 +53,11 @@ router.post("/", async function (request, response) {
     modifiedCnt === matchedCnt
       ? response.status(200).send({ message: "Products sold successfully" })
       : response.status(400).send({
-          message: "Products not sold successfully. Kindly check database.",
+          message: "Few products not sold. Kindly check database.",
         });
   } else {
     response.status(400).send({
-      message: "Products not sold successfully. Kindly check database.",
+      message: "Products not sold. Kindly check database.",
     });
   }
 });
